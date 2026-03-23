@@ -16,8 +16,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Fraunces", "Georgia", "serif"],
-        body: ["Figtree", "sans-serif"],
+        display: ["BricolageGrotesque", "sans-serif"],
+        body: ["PlusJakartaSans", "sans-serif"],
       },
       colors: {
         border: "oklch(var(--border))",
@@ -53,6 +53,8 @@ export default {
           DEFAULT: "oklch(var(--card))",
           foreground: "oklch(var(--card-foreground))",
         },
+        "dark-bg": "oklch(var(--dark-bg))",
+        "dark-bg-2": "oklch(var(--dark-bg-2))",
         chart: {
           1: "oklch(var(--chart-1))",
           2: "oklch(var(--chart-2))",
@@ -75,13 +77,14 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-        xl: "1.5rem",
-        "2xl": "2rem",
+        xl: "1rem",
+        "2xl": "1.5rem",
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgba(0,0,0,0.05)",
-        festive: "0 8px 32px oklch(0.62 0.22 350 / 0.15), 0 2px 8px oklch(0.65 0.18 290 / 0.1)",
-        card: "0 4px 24px oklch(0.62 0.22 350 / 0.1), 0 1px 4px rgba(0,0,0,0.05)",
+        card: "0 2px 16px rgba(15,36,54,0.08), 0 1px 4px rgba(0,0,0,0.04)",
+        "card-hover": "0 8px 32px rgba(15,36,54,0.14), 0 2px 8px rgba(0,0,0,0.06)",
+        glow: "0 0 40px oklch(0.73 0.12 210 / 0.4)",
       },
       keyframes: {
         "accordion-down": {
@@ -92,15 +95,10 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "pop-in": {
-          "0%": { transform: "scale(0.8)", opacity: "0" },
-          "100%": { transform: "scale(1)", opacity: "1" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "pop-in": "pop-in 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards",
       },
     },
   },

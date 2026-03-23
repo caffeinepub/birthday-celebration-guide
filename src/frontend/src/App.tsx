@@ -1,647 +1,976 @@
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Toaster } from "@/components/ui/sonner";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Cake,
-  Camera,
+  BarChart3,
+  Bot,
+  Brain,
   CheckCircle2,
-  Circle,
-  Gift,
+  ChevronRight,
+  Github,
   Heart,
-  Music,
-  PartyPopper,
-  Sparkles,
-  Star,
+  Lightbulb,
+  Linkedin,
+  Loader2,
+  Mail,
+  MapPin,
+  Menu,
+  Phone,
+  Twitter,
+  X,
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { useState } from "react";
-
-// ── Confetti ─────────────────────────────────────────────────────────────────
-const CONFETTI_COLORS = [
-  "oklch(0.62 0.22 350)",
-  "oklch(0.65 0.18 290)",
-  "oklch(0.88 0.18 85)",
-  "oklch(0.72 0.16 200)",
-  "oklch(0.78 0.2 30)",
-];
-
-const confettiItems = Array.from({ length: 18 }, (_, i) => ({
-  id: i,
-  color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-  left: `${(i * 5.5 + 2) % 100}%`,
-  duration: `${4 + (i % 5)}s`,
-  delay: `${(i * 0.4) % 3}s`,
-  size: i % 3 === 0 ? 10 : i % 2 === 0 ? 7 : 5,
-}));
+import { toast } from "sonner";
+import { useSubmitContact } from "./hooks/useQueries";
 
 // ── Data ──────────────────────────────────────────────────────────────────────
-const planningSteps = [
+const NAV_LINKS = [
+  { label: "Services", href: "#services" },
+  { label: "About", href: "#about" },
+  { label: "Portfolio", href: "#portfolio" },
+  { label: "Contact", href: "#contact" },
+];
+
+const SERVICES = [
   {
-    emoji: "📅",
-    title: "Pick a Date & Venue",
-    desc: "Choose a date that works for the birthday person and key guests. Scout venues: home, rooftop, garden, or a favourite restaurant.",
+    icon: Brain,
+    title: "AI Automation",
+    desc: "Automate repetitive tasks and complex workflows with intelligent AI systems that learn and adapt to your business processes.",
+    tag: "Efficiency",
   },
   {
-    emoji: "💰",
-    title: "Set a Budget",
-    desc: "Decide how much you want to spend in total and break it into categories: venue, food, decorations, entertainment, gifts.",
+    icon: BarChart3,
+    title: "Smart Analytics",
+    desc: "Unlock data-driven insights powered by machine learning algorithms. Turn raw data into strategic intelligence.",
+    tag: "Intelligence",
   },
   {
-    emoji: "📝",
-    title: "Create a Guest List",
-    desc: "Keep it intimate or go big — just make sure the people who matter most are included. Track RSVPs early!",
-  },
-  {
-    emoji: "💌",
-    title: "Send Invitations (2–3 Weeks Ahead)",
-    desc: "Digital or printed, send invites with date, time, location, dress code, and RSVP deadline.",
-  },
-  {
-    emoji: "🎂",
-    title: "Plan Food & Cake",
-    desc: "Book a custom cake or plan a dessert spread. Arrange catering or a potluck of favourite dishes.",
-  },
-  {
-    emoji: "🎈",
-    title: "Arrange Decorations",
-    desc: "Theme, colours, balloons, banners — buy or DIY. Set up the day before to avoid last-minute stress.",
-  },
-  {
-    emoji: "🎤",
-    title: "Plan Activities & Entertainment",
-    desc: "Games, music playlist, photo booth, or live entertainment. Keep energy up throughout the event.",
-  },
-  {
-    emoji: "🎁",
-    title: "Prepare the Birthday Surprise",
-    desc: "Coordinate a group surprise: a video compilation, a heartfelt speech, a flash mob, or a special gift reveal.",
+    icon: Lightbulb,
+    title: "AI Consulting",
+    desc: "Expert guidance to identify, plan, and integrate AI solutions that align with your unique business goals.",
+    tag: "Strategy",
   },
 ];
 
-const decorationIdeas = [
-  {
-    emoji: "🎈",
-    title: "Balloon Arch",
-    desc: "A colourful balloon arch or cluster as the centrepiece backdrop makes for stunning photos.",
-  },
-  {
-    emoji: "🎊",
-    title: "Happy Birthday Banners",
-    desc: "Hang personalised banners with the person's name and age — go glittery for extra flair!",
-  },
-  {
-    emoji: "🌸",
-    title: "Table Centerpieces",
-    desc: "Floral centrepieces, candles, or themed props tied to their hobbies or favourite things.",
-  },
-  {
-    emoji: "✨",
-    title: "Fairy Lights",
-    desc: "String lights draped overhead or along walls create a magical, warm glow for evening parties.",
-  },
-  {
-    emoji: "📸",
-    title: "Photo Wall",
-    desc: "Print their best memories and arrange a photo collage wall — guests will love reminiscing!",
-  },
-  {
-    emoji: "🎨",
-    title: "Themed Colour Palette",
-    desc: "Pick 2–3 colours for everything: tablecloths, plates, cups, flowers, balloons. Consistency = elegance.",
-  },
+const CLIENTS = [
+  "TechNova",
+  "DataForge",
+  "Nexus Labs",
+  "Vertex AI",
+  "Synapse Co",
+  "CloudMind",
 ];
 
-const foodIdeas = [
-  {
-    emoji: "🎂",
-    title: "Custom Birthday Cake",
-    desc: "Commission a bespoke cake from a local baker — personalised with a photo, fondant art, or their favourite flavour.",
-  },
-  {
-    emoji: "🧁",
-    title: "Themed Cupcakes",
-    desc: "Individual cupcakes decorated to match the party theme — easy to distribute and adorably photogenic.",
-  },
-  {
-    emoji: "🥗",
-    title: "Finger Foods & Grazing Board",
-    desc: "An elegant grazing board with cheeses, fruits, crackers, and charcuterie is crowd-pleasing and easy to manage.",
-  },
-  {
-    emoji: "🍹",
-    title: "Mocktails & Drinks Station",
-    desc: "Set up a self-serve drinks station with flavoured sodas, fruit punches, and creative garnishes.",
-  },
-  {
-    emoji: "🍬",
-    title: "Candy Bar",
-    desc: "A colourful candy bar lets guests fill their own bags — doubles as a party favour!",
-  },
-  {
-    emoji: "🍕",
-    title: "Favourite Comfort Foods",
-    desc: "Include the birthday person's absolute favourite dish as the star of the menu — it's their day!",
-  },
-];
-
-const activityIdeas = [
-  {
-    emoji: "🧠",
-    title: "'About Them' Trivia",
-    desc: "Create a quiz about the birthday person's life, favourite things, and memories — guests will learn something new!",
-  },
-  {
-    emoji: "📷",
-    title: "Photo Booth Corner",
-    desc: "Set up a backdrop with fun props: hats, glasses, speech bubbles. Instant photo strips are a great memento.",
-  },
-  {
-    emoji: "🎤",
-    title: "Karaoke Session",
-    desc: "Belt out their favourite songs together! Karaoke machines are affordable to rent and always get the party going.",
-  },
-  {
-    emoji: "💌",
-    title: "Birthday Memory Jar",
-    desc: "Ask guests to write a favourite memory with the birthday person on a slip of paper — a tearful, beautiful read.",
-  },
-  {
-    emoji: "🗺️",
-    title: "Treasure Hunt",
-    desc: "Hide clues around the venue that lead to a special surprise gift at the end — works for any age!",
-  },
-  {
-    emoji: "🎬",
-    title: "Video Message Compilation",
-    desc: "Collect short video messages from friends and family who can't attend and play it as a surprise during the party.",
-  },
-];
-
-const giftIdeas = [
-  {
-    emoji: "🖼️",
-    title: "Personalised Gifts",
-    desc: "Engraved jewellery, custom portrait, personalised star map of their birth date — deeply meaningful and unique.",
-  },
-  {
-    emoji: "✈️",
-    title: "Experience Gifts",
-    desc: "Book a spa day, cooking class, concert tickets, or a weekend getaway. Experiences create lasting memories.",
-  },
-  {
-    emoji: "💌",
-    title: "Heartfelt Handwritten Letter",
-    desc: "Pour your feelings onto paper. A sincere letter can become a treasured keepsake for years to come.",
-  },
-  {
-    emoji: "📷",
-    title: "Photo Album or Scrapbook",
-    desc: "Curate years of photos into a beautiful printed album or hand-crafted scrapbook filled with captions and mementos.",
-  },
-  {
-    emoji: "👥",
-    title: "Group Gift",
-    desc: "Pool resources with friends for one big, meaningful gift they'd never buy themselves — make it truly special.",
-  },
-  {
-    emoji: "🌱",
-    title: "Subscription Box",
-    desc: "A curated monthly subscription tied to their hobby — books, coffee, skincare, plants — a gift that keeps giving.",
-  },
-];
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.1 } },
+const FOOTER_LINKS: Record<string, { label: string; href: string }[]> = {
+  Services: [
+    { label: "AI Automation", href: "#services" },
+    { label: "Smart Analytics", href: "#services" },
+    { label: "AI Consulting", href: "#services" },
+  ],
+  Company: [
+    { label: "About Us", href: "#about" },
+    { label: "Portfolio", href: "#portfolio" },
+    { label: "Contact", href: "#contact" },
+  ],
+  Legal: [
+    { label: "Privacy Policy", href: "#privacy" },
+    { label: "Terms of Service", href: "#terms" },
+    { label: "Cookie Policy", href: "#cookies" },
+  ],
 };
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.5,
-      ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-    },
-  },
-};
-
-function SectionHeading({
-  icon: Icon,
-  title,
-  subtitle,
-}: { icon: React.ElementType; title: string; subtitle: string }) {
+// ── Hero Illustration ─────────────────────────────────────────────────────────
+function HeroVisual() {
   return (
-    <div className="text-center mb-12">
-      <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4">
-        <Icon className="w-7 h-7 text-primary" />
-      </div>
-      <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-3">
-        {title}
-      </h2>
-      <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-        {subtitle}
-      </p>
+    <div className="relative w-full max-w-[500px] mx-auto lg:mx-0 float-anim">
+      <img
+        src="/assets/generated/hero-robot-ai.dim_600x500.png"
+        alt="AI Robot with glowing orb"
+        className="w-full h-auto rounded-2xl"
+      />
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.8, duration: 0.6 }}
+        className="absolute -left-4 top-1/4 bg-white rounded-xl shadow-card-hover px-4 py-2 flex items-center gap-2 border border-border"
+      >
+        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+        <span className="text-xs font-semibold text-foreground font-body">
+          AI Models Active
+        </span>
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 1.0, duration: 0.6 }}
+        className="absolute -right-4 bottom-1/4 bg-white rounded-xl shadow-card-hover px-4 py-2 border border-border"
+      >
+        <div className="text-xs text-muted-foreground font-body">
+          Efficiency
+        </div>
+        <div className="text-lg font-bold text-foreground font-display">
+          +247%
+        </div>
+      </motion.div>
     </div>
   );
 }
 
-function IdeaCard({
-  emoji,
+// ── Service Card ──────────────────────────────────────────────────────────────
+function ServiceCard({
+  icon: Icon,
   title,
   desc,
+  tag,
   index,
-}: { emoji: string; title: string; desc: string; index: number }) {
+}: {
+  icon: React.ElementType;
+  title: string;
+  desc: string;
+  tag: string;
+  index: number;
+}) {
   return (
-    <motion.div variants={cardVariants} data-ocid={`idea.item.${index}`}>
-      <Card className="h-full shadow-card hover:shadow-festive transition-shadow duration-300 cursor-default rounded-2xl border-border/50 bg-card group">
-        <CardHeader className="pb-2">
-          <div className="text-4xl mb-2 group-hover:scale-110 transition-transform duration-300 inline-block">
-            {emoji}
-          </div>
-          <CardTitle className="font-display text-xl text-card-foreground">
-            {title}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground leading-relaxed text-sm">
-            {desc}
-          </p>
-        </CardContent>
-      </Card>
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      className="group bg-card rounded-2xl p-8 border border-border shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1"
+      data-ocid={`services.item.${index}`}
+    >
+      <div
+        className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-colors duration-300"
+        style={{ background: "oklch(0.21 0.045 232 / 0.08)" }}
+      >
+        <Icon className="w-7 h-7" style={{ color: "oklch(0.73 0.12 210)" }} />
+      </div>
+      <div
+        className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3 border"
+        style={{
+          color: "oklch(0.73 0.12 210)",
+          borderColor: "oklch(0.73 0.12 210 / 0.3)",
+          background: "oklch(0.73 0.12 210 / 0.08)",
+        }}
+      >
+        {tag}
+      </div>
+      <h3 className="font-display text-xl font-bold text-foreground mb-3">
+        {title}
+      </h3>
+      <p className="text-muted-foreground leading-relaxed text-sm">{desc}</p>
+      <div
+        className="mt-6 flex items-center gap-1 text-sm font-semibold"
+        style={{ color: "oklch(0.73 0.12 210)" }}
+      >
+        Learn more <ChevronRight className="w-4 h-4" />
+      </div>
     </motion.div>
   );
 }
 
 // ── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+  const submitContact = useSubmitContact();
 
-  const toggleStep = (i: number) => {
-    setCheckedSteps((prev) => {
-      const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
-      return next;
-    });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.message) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+    try {
+      await submitContact.mutateAsync(formData);
+      toast.success("Message sent! We'll be in touch soon.");
+      setFormData({ name: "", email: "", message: "" });
+    } catch {
+      toast.error("Failed to send message. Please try again.");
+    }
   };
 
-  const progress = Math.round((checkedSteps.size / planningSteps.length) * 100);
-
   return (
-    <div className="min-h-screen bg-background font-body relative overflow-x-hidden">
-      {/* Floating confetti */}
-      <div aria-hidden="true">
-        {confettiItems.map((p) => (
-          <div
-            key={p.id}
-            className="confetti-particle"
-            style={{
-              left: p.left,
-              top: `-${p.size * 2}px`,
-              width: p.size,
-              height: p.size,
-              backgroundColor: p.color,
-              animationDuration: p.duration,
-              animationDelay: p.delay,
-              opacity: 0.7,
-            }}
-          />
-        ))}
-      </div>
+    <div className="min-h-screen bg-background font-body overflow-x-hidden">
+      <Toaster />
 
-      {/* ── Hero ── */}
-      <header className="relative">
-        <div className="relative h-64 md:h-96 overflow-hidden">
-          <img
-            src="/assets/generated/birthday-hero.dim_1200x400.jpg"
-            alt="Birthday celebration with balloons and confetti"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-background" />
-        </div>
-        <div className="container max-w-4xl mx-auto px-4 -mt-20 relative z-10 pb-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, ease: [0.34, 1.56, 0.64, 1] }}
+      {/* ── Header ── */}
+      <header
+        className="sticky top-0 z-50 w-full"
+        style={{
+          background: "oklch(0.17 0.022 228)",
+          borderBottom: "1px solid oklch(0.25 0.03 228)",
+        }}
+        data-ocid="header.section"
+      >
+        <div className="container max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          {/* Logo */}
+          <a
+            href="#hero"
+            className="flex items-center gap-2.5 shrink-0"
+            data-ocid="nav.link"
           >
-            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-5 py-2 mb-5 backdrop-blur-sm">
-              <PartyPopper className="w-4 h-4 text-primary" />
-              <span className="text-primary font-semibold text-sm tracking-wide">
-                The Ultimate Birthday Guide
-              </span>
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center"
+              style={{
+                background: "oklch(0.73 0.12 210 / 0.15)",
+                border: "1px solid oklch(0.73 0.12 210 / 0.3)",
+              }}
+            >
+              <Bot
+                className="w-5 h-5"
+                style={{ color: "oklch(0.73 0.12 210)" }}
+              />
             </div>
-            <h1 className="font-display text-4xl md:text-6xl font-black leading-tight mb-4">
-              <span className="shimmer-text">How to Throw an </span>
-              <br />
-              <span className="shimmer-text">Unforgettable Birthday</span>
-            </h1>
-            <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-              A complete guide to planning, decorating, and celebrating the
-              perfect birthday party for someone you love 🎉
-            </p>
-          </motion.div>
+            <div className="leading-none">
+              <div className="font-display text-white font-bold text-sm tracking-widest uppercase">
+                White Bot
+              </div>
+              <div
+                className="text-xs tracking-widest uppercase"
+                style={{ color: "oklch(0.73 0.12 210)" }}
+              >
+                AI Agency
+              </div>
+            </div>
+          </a>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-8">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                className="text-sm font-medium transition-colors duration-200 hover:text-white"
+                style={{ color: "oklch(0.72 0.01 228)" }}
+                data-ocid="nav.link"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+
+          {/* CTA */}
+          <div className="hidden md:flex items-center gap-4">
+            <a href="#contact" data-ocid="nav.primary_button">
+              <Button
+                size="sm"
+                className="rounded-full font-semibold text-sm px-5 tracking-wide"
+                style={{
+                  background: "oklch(0.73 0.12 210)",
+                  color: "oklch(0.17 0.022 228)",
+                }}
+              >
+                REQUEST DEMO
+              </Button>
+            </a>
+          </div>
+
+          {/* Mobile menu toggle */}
+          <button
+            type="button"
+            className="md:hidden text-white"
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            aria-label="Toggle menu"
+            data-ocid="nav.toggle"
+          >
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
+          </button>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden border-t"
+            style={{
+              background: "oklch(0.17 0.022 228)",
+              borderColor: "oklch(0.25 0.03 228)",
+            }}
+          >
+            <nav className="flex flex-col px-6 py-4 gap-3">
+              {NAV_LINKS.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="text-sm font-medium py-2 text-white/80 hover:text-white"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </a>
+              ))}
+              <Button
+                size="sm"
+                className="rounded-full w-full mt-2 font-semibold"
+                style={{
+                  background: "oklch(0.73 0.12 210)",
+                  color: "oklch(0.17 0.022 228)",
+                }}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  document
+                    .getElementById("contact")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                REQUEST DEMO
+              </Button>
+            </nav>
+          </motion.div>
+        )}
       </header>
 
       <main>
-        {/* ── Planning Checklist ── */}
-        <section className="py-20 px-4" data-ocid="planning.section">
-          <div className="container max-w-3xl mx-auto">
-            <SectionHeading
-              icon={Sparkles}
-              title="Step-by-Step Planning Guide"
-              subtitle="Follow these 8 steps to plan a celebration that'll be talked about for years."
-            />
+        {/* ── Hero ── */}
+        <section
+          id="hero"
+          className="py-24 px-6 relative overflow-hidden"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(0.17 0.022 228) 0%, oklch(0.22 0.03 228) 100%)",
+          }}
+          data-ocid="hero.section"
+        >
+          {/* Background grid pattern */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-5"
+            style={{
+              backgroundImage:
+                "linear-gradient(oklch(0.73 0.12 210) 1px, transparent 1px), linear-gradient(90deg, oklch(0.73 0.12 210) 1px, transparent 1px)",
+              backgroundSize: "50px 50px",
+            }}
+          />
 
-            {/* Progress bar */}
-            <div className="mb-8 bg-card rounded-2xl p-5 shadow-card border border-border/50">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-sm font-semibold text-foreground">
-                  Your Planning Progress
-                </span>
-                <Badge variant="secondary" className="font-bold text-primary">
-                  {progress}% done
-                </Badge>
-              </div>
-              <div className="h-3 rounded-full bg-secondary overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full bg-primary"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                  data-ocid="planning.loading_state"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {checkedSteps.size} of {planningSteps.length} steps completed
-              </p>
-            </div>
-
-            <motion.ol
-              className="space-y-4"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-            >
-              {planningSteps.map((step, i) => (
-                <motion.li
-                  key={step.title}
-                  variants={cardVariants}
-                  data-ocid={`planning.item.${i + 1}`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => toggleStep(i)}
-                    data-ocid={`planning.checkbox.${i + 1}`}
-                    className="w-full text-left group"
-                    aria-pressed={checkedSteps.has(i)}
-                  >
-                    <div
-                      className={`flex gap-4 p-5 rounded-2xl border transition-all duration-300 ${
-                        checkedSteps.has(i)
-                          ? "bg-primary/5 border-primary/30"
-                          : "bg-card border-border/50 hover:border-primary/30 hover:shadow-card"
-                      }`}
+          <div className="container max-w-6xl mx-auto relative z-10">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              {/* Left column */}
+              <motion.div
+                initial={{ opacity: 0, x: -40 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div className="gradient-border-badge inline-block mb-6">
+                  <div className="gradient-border-badge-inner">
+                    <span
+                      className="text-xs font-bold tracking-widest uppercase"
+                      style={{ color: "oklch(0.73 0.12 210)" }}
                     >
-                      <div className="flex-shrink-0 mt-0.5">
-                        <AnimatePresence mode="wait">
-                          {checkedSteps.has(i) ? (
-                            <motion.div
-                              key="checked"
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              exit={{ scale: 0 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <CheckCircle2 className="w-6 h-6 text-primary" />
-                            </motion.div>
-                          ) : (
-                            <motion.div
-                              key="unchecked"
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                            >
-                              <Circle className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                      ✦ Next-Gen AI Agency
+                    </span>
+                  </div>
+                </div>
+
+                <h1 className="font-display text-5xl lg:text-6xl font-extrabold text-white leading-[1.05] tracking-tight mb-6">
+                  Intelligent AI
+                  <br />
+                  <span style={{ color: "oklch(0.73 0.12 210)" }}>
+                    Solutions
+                  </span>
+                  <br />
+                  for the Future
+                </h1>
+
+                <p
+                  className="text-base leading-relaxed mb-10"
+                  style={{ color: "oklch(0.72 0.01 228)" }}
+                >
+                  We build transformative AI systems that automate workflows,
+                  unlock insights, and scale your business. Partner with the
+                  agency trusted by leading innovators.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <a href="#services" data-ocid="hero.primary_button">
+                    <Button
+                      className="rounded-xl px-8 py-3 h-auto font-bold text-sm tracking-wide"
+                      style={{
+                        background: "oklch(0.73 0.12 210)",
+                        color: "oklch(0.17 0.022 228)",
+                      }}
+                    >
+                      EXPLORE SERVICES
+                    </Button>
+                  </a>
+                  <a href="#about" data-ocid="hero.secondary_button">
+                    <Button
+                      variant="outline"
+                      className="rounded-xl px-8 py-3 h-auto font-bold text-sm tracking-wide"
+                      style={{
+                        borderColor: "oklch(0.72 0.01 228 / 0.5)",
+                        color: "white",
+                        background: "transparent",
+                      }}
+                    >
+                      LEARN MORE
+                    </Button>
+                  </a>
+                </div>
+
+                {/* Stats row */}
+                <div className="mt-12 flex gap-10">
+                  {[
+                    { value: "150+", label: "Projects" },
+                    { value: "98%", label: "Satisfaction" },
+                    { value: "12+", label: "Industries" },
+                  ].map((stat) => (
+                    <div key={stat.label}>
+                      <div className="font-display text-2xl font-bold text-white">
+                        {stat.value}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xl">{step.emoji}</span>
-                          <span
-                            className={`font-display font-bold text-lg ${
-                              checkedSteps.has(i)
-                                ? "line-through text-muted-foreground"
-                                : "text-foreground"
-                            }`}
-                          >
-                            {step.title}
-                          </span>
-                          <span className="ml-auto text-xs font-bold text-primary/60 step-glow bg-primary/10 px-2 py-0.5 rounded-full">
-                            Step {i + 1}
-                          </span>
-                        </div>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                          {step.desc}
-                        </p>
+                      <div
+                        className="text-xs"
+                        style={{ color: "oklch(0.60 0.01 228)" }}
+                      >
+                        {stat.label}
                       </div>
                     </div>
-                  </button>
-                </motion.li>
-              ))}
-            </motion.ol>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Right column */}
+              <motion.div
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{
+                  duration: 0.7,
+                  delay: 0.2,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                className="flex justify-center lg:justify-end"
+              >
+                <HeroVisual />
+              </motion.div>
+            </div>
           </div>
         </section>
 
-        {/* ── Decorations ── */}
+        {/* ── Services ── */}
         <section
-          className="py-20 px-4 bg-gradient-to-b from-background via-secondary/30 to-background"
-          data-ocid="decorations.section"
+          id="services"
+          className="py-24 px-6 bg-background"
+          data-ocid="services.section"
         >
           <div className="container max-w-6xl mx-auto">
-            <SectionHeading
-              icon={Star}
-              title="Decoration Ideas"
-              subtitle="Transform any space into a magical birthday wonderland."
-            />
             <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-16"
             >
-              {decorationIdeas.map((item, i) => (
-                <IdeaCard key={item.title} {...item} index={i + 1} />
-              ))}
+              <div
+                className="inline-block text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 border"
+                style={{
+                  color: "oklch(0.73 0.12 210)",
+                  borderColor: "oklch(0.73 0.12 210 / 0.3)",
+                  background: "oklch(0.73 0.12 210 / 0.07)",
+                }}
+              >
+                SERVICES
+              </div>
+              <h2 className="font-display text-4xl font-bold text-foreground mb-4">
+                What We Deliver
+              </h2>
+              <p className="text-muted-foreground max-w-xl mx-auto">
+                End-to-end AI solutions engineered for real business impact.
+              </p>
             </motion.div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {SERVICES.map((svc, i) => (
+                <ServiceCard key={svc.title} {...svc} index={i + 1} />
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* ── Food ── */}
-        <section className="py-20 px-4" data-ocid="food.section">
-          <div className="container max-w-6xl mx-auto">
-            <SectionHeading
-              icon={Cake}
-              title="Cake & Food Ideas"
-              subtitle="Delight every palate with a spread as special as the occasion."
-            />
-            <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-            >
-              {foodIdeas.map((item, i) => (
-                <IdeaCard key={item.title} {...item} index={i + 1} />
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* ── Activities ── */}
+        {/* ── About ── */}
         <section
-          className="py-20 px-4 bg-gradient-to-b from-background via-accent/10 to-background"
-          data-ocid="activities.section"
+          id="about"
+          className="py-24 px-6"
+          style={{ background: "oklch(0.95 0.008 220)" }}
+          data-ocid="about.section"
         >
           <div className="container max-w-6xl mx-auto">
-            <SectionHeading
-              icon={Music}
-              title="Fun Activities & Games"
-              subtitle="Keep the energy high and the laughter flowing all night long."
-            />
             <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-16"
             >
-              {activityIdeas.map((item, i) => (
-                <IdeaCard key={item.title} {...item} index={i + 1} />
-              ))}
+              <div
+                className="inline-block text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 border"
+                style={{
+                  color: "oklch(0.73 0.12 210)",
+                  borderColor: "oklch(0.73 0.12 210 / 0.3)",
+                  background: "oklch(0.73 0.12 210 / 0.07)",
+                }}
+              >
+                ABOUT US
+              </div>
+              <h2 className="font-display text-4xl font-bold text-foreground">
+                The Team Behind the Technology
+              </h2>
             </motion.div>
-          </div>
-        </section>
 
-        {/* ── Gifts ── */}
-        <section className="py-20 px-4" data-ocid="gifts.section">
-          <div className="container max-w-6xl mx-auto">
-            <SectionHeading
-              icon={Gift}
-              title="Gift Ideas"
-              subtitle="The perfect gift shows you know them — here's some inspiration."
-            />
             <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-            >
-              {giftIdeas.map((item, i) => (
-                <IdeaCard key={item.title} {...item} index={i + 1} />
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* ── Photo tip banner ── */}
-        <section className="py-16 px-4">
-          <div className="container max-w-3xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="relative overflow-hidden rounded-3xl p-8 md:p-12 text-center"
-              style={{
-                background:
-                  "linear-gradient(135deg, oklch(0.62 0.22 350 / 0.12), oklch(0.65 0.18 290 / 0.12), oklch(0.88 0.18 85 / 0.12))",
-                border: "1.5px solid oklch(0.62 0.22 350 / 0.2)",
-              }}
+              className="grid lg:grid-cols-2 rounded-2xl overflow-hidden shadow-card-hover border border-border"
+            >
+              {/* Photo side */}
+              <div className="relative overflow-hidden min-h-64">
+                <img
+                  src="/assets/generated/team-meeting.dim_600x400.jpg"
+                  alt="White Bot AI team at work"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* Text side */}
+              <div
+                className="p-10 lg:p-14 flex flex-col justify-center"
+                style={{ background: "oklch(0.17 0.022 228)" }}
+              >
+                <div
+                  className="text-xs font-bold uppercase tracking-widest mb-4"
+                  style={{ color: "oklch(0.73 0.12 210)" }}
+                >
+                  WHO WE ARE
+                </div>
+                <h3 className="font-display text-3xl font-bold text-white mb-6">
+                  Pioneers in Practical AI
+                </h3>
+                <p
+                  className="leading-relaxed mb-6"
+                  style={{ color: "oklch(0.72 0.01 228)" }}
+                >
+                  White Bot AI Agency is a collective of machine learning
+                  engineers, data scientists, and product strategists obsessed
+                  with one thing: making AI work for real businesses. Founded in
+                  2019, we’ve helped over 150 companies across 12 industries
+                  harness the power of intelligent automation.
+                </p>
+                <p
+                  className="leading-relaxed"
+                  style={{ color: "oklch(0.60 0.01 228)" }}
+                >
+                  We don’t just build models — we architect full AI pipelines,
+                  integrate seamlessly with your existing stack, and stay with
+                  you through every step of the journey.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ── Portfolio ── */}
+        <section
+          id="portfolio"
+          className="py-20 px-6 bg-background"
+          data-ocid="portfolio.section"
+        >
+          <div className="container max-w-6xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-12"
             >
               <div
-                className="absolute top-4 left-4 text-4xl float-anim"
-                aria-hidden="true"
+                className="inline-block text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 border"
+                style={{
+                  color: "oklch(0.73 0.12 210)",
+                  borderColor: "oklch(0.73 0.12 210 / 0.3)",
+                  background: "oklch(0.73 0.12 210 / 0.07)",
+                }}
               >
-                🎉
+                PORTFOLIO / CLIENTS
               </div>
-              <div
-                className="absolute top-4 right-4 text-4xl float-anim"
-                style={{ animationDelay: "1s" }}
-                aria-hidden="true"
-              >
-                🎈
+              <h2 className="font-display text-4xl font-bold text-foreground">
+                Trusted by Industry Leaders
+              </h2>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4"
+            >
+              {CLIENTS.map((client, i) => (
+                <div
+                  key={client}
+                  className="flex items-center justify-center py-6 px-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-card transition-all duration-300"
+                  data-ocid={`portfolio.item.${i + 1}`}
+                >
+                  <span className="font-display text-sm font-bold text-muted-foreground hover:text-foreground transition-colors tracking-wide uppercase">
+                    {client}
+                  </span>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ── Contact ── */}
+        <section
+          id="contact"
+          className="py-24 px-6 bg-background"
+          data-ocid="contact.section"
+        >
+          <div className="container max-w-6xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="rounded-3xl overflow-hidden shadow-card-hover"
+              style={{ background: "oklch(0.17 0.022 228)" }}
+            >
+              <div className="grid lg:grid-cols-2">
+                {/* Left: info */}
+                <div className="p-12 lg:p-16 flex flex-col justify-center">
+                  <div
+                    className="text-xs font-bold uppercase tracking-widest mb-4"
+                    style={{ color: "oklch(0.73 0.12 210)" }}
+                  >
+                    GET IN TOUCH
+                  </div>
+                  <h2 className="font-display text-4xl font-bold text-white mb-4">
+                    Ready to Innovate?
+                  </h2>
+                  <p
+                    className="mb-10"
+                    style={{ color: "oklch(0.65 0.01 228)" }}
+                  >
+                    Let’s discuss how AI can transform your business. Reach out
+                    and our team will respond within 24 hours.
+                  </p>
+
+                  <div className="flex flex-col gap-5">
+                    {[
+                      { icon: Mail, text: "hello@whitebot.ai", label: "Email" },
+                      {
+                        icon: Phone,
+                        text: "+1 (555) 800-2400",
+                        label: "Phone",
+                      },
+                      {
+                        icon: MapPin,
+                        text: "San Francisco, CA 94105",
+                        label: "Address",
+                      },
+                    ].map(({ icon: Icon, text, label }) => (
+                      <div key={label} className="flex items-center gap-4">
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                          style={{
+                            background: "oklch(0.73 0.12 210 / 0.12)",
+                            border: "1px solid oklch(0.73 0.12 210 / 0.25)",
+                          }}
+                        >
+                          <Icon
+                            className="w-4 h-4"
+                            style={{ color: "oklch(0.73 0.12 210)" }}
+                          />
+                        </div>
+                        <div>
+                          <div
+                            className="text-xs"
+                            style={{ color: "oklch(0.55 0.01 228)" }}
+                          >
+                            {label}
+                          </div>
+                          <div className="text-sm font-medium text-white">
+                            {text}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right: form */}
+                <div
+                  className="p-12 lg:p-16"
+                  style={{
+                    background: "oklch(0.20 0.025 228)",
+                    borderLeft: "1px solid oklch(0.25 0.03 228)",
+                  }}
+                >
+                  <form
+                    onSubmit={handleSubmit}
+                    className="flex flex-col gap-5"
+                    data-ocid="contact.modal"
+                  >
+                    <div className="flex flex-col gap-2">
+                      <Label
+                        htmlFor="name"
+                        className="text-sm font-medium"
+                        style={{ color: "oklch(0.72 0.01 228)" }}
+                      >
+                        Full Name
+                      </Label>
+                      <Input
+                        id="name"
+                        placeholder="John Smith"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData((p) => ({ ...p, name: e.target.value }))
+                        }
+                        className="rounded-xl border text-white placeholder:text-white/30 focus:ring-2 h-12"
+                        style={{
+                          background: "oklch(0.17 0.022 228)",
+                          borderColor: "oklch(0.28 0.03 228)",
+                        }}
+                        data-ocid="contact.input"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Label
+                        htmlFor="email"
+                        className="text-sm font-medium"
+                        style={{ color: "oklch(0.72 0.01 228)" }}
+                      >
+                        Email Address
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="john@company.com"
+                        value={formData.email}
+                        onChange={(e) =>
+                          setFormData((p) => ({ ...p, email: e.target.value }))
+                        }
+                        className="rounded-xl border text-white placeholder:text-white/30 h-12"
+                        style={{
+                          background: "oklch(0.17 0.022 228)",
+                          borderColor: "oklch(0.28 0.03 228)",
+                        }}
+                        data-ocid="contact.input"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Label
+                        htmlFor="message"
+                        className="text-sm font-medium"
+                        style={{ color: "oklch(0.72 0.01 228)" }}
+                      >
+                        Message
+                      </Label>
+                      <Textarea
+                        id="message"
+                        placeholder="Tell us about your project..."
+                        rows={4}
+                        value={formData.message}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            message: e.target.value,
+                          }))
+                        }
+                        className="rounded-xl border text-white placeholder:text-white/30 resize-none"
+                        style={{
+                          background: "oklch(0.17 0.022 228)",
+                          borderColor: "oklch(0.28 0.03 228)",
+                        }}
+                        data-ocid="contact.textarea"
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={submitContact.isPending}
+                      className="rounded-xl h-12 font-bold tracking-wide text-sm mt-2"
+                      style={{
+                        background: "oklch(0.73 0.12 210)",
+                        color: "oklch(0.17 0.022 228)",
+                      }}
+                      data-ocid="contact.submit_button"
+                    >
+                      {submitContact.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          SENDING...
+                        </>
+                      ) : submitContact.isSuccess ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          MESSAGE SENT!
+                        </>
+                      ) : (
+                        "SEND MESSAGE"
+                      )}
+                    </Button>
+
+                    {submitContact.isPending && (
+                      <div
+                        className="text-xs text-center"
+                        style={{ color: "oklch(0.55 0.01 228)" }}
+                        data-ocid="contact.loading_state"
+                      >
+                        Sending your message...
+                      </div>
+                    )}
+                  </form>
+                </div>
               </div>
-              <div
-                className="absolute bottom-4 left-8 text-3xl float-anim"
-                style={{ animationDelay: "0.5s" }}
-                aria-hidden="true"
-              >
-                ✨
-              </div>
-              <div
-                className="absolute bottom-4 right-8 text-3xl float-anim"
-                style={{ animationDelay: "1.5s" }}
-                aria-hidden="true"
-              >
-                🎊
-              </div>
-              <Camera className="w-10 h-10 text-primary mx-auto mb-4" />
-              <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-3">
-                Don't Forget to Capture the Moments!
-              </h3>
-              <p className="text-muted-foreground leading-relaxed max-w-lg mx-auto">
-                Assign a dedicated photographer (or hire one!), set up a photo
-                booth, and create a shared album so everyone can upload their
-                photos. The memories are priceless.
-              </p>
             </motion.div>
           </div>
         </section>
       </main>
 
       {/* ── Footer ── */}
-      <footer className="py-16 px-4 text-center border-t border-border/50 bg-card">
-        <div className="container max-w-3xl mx-auto">
-          <div className="flex justify-center mb-6">
-            <div className="flex gap-3 text-3xl">
-              {["🎂", "🎈", "🎉", "🎁", "✨"].map((e, i) => (
-                <span
-                  key={e}
-                  className="float-anim"
-                  style={{ animationDelay: `${i * 0.3}s` }}
-                  aria-hidden="true"
+      <footer
+        style={{
+          background: "oklch(0.17 0.022 228)",
+          borderTop: "1px solid oklch(0.25 0.03 228)",
+        }}
+      >
+        <div className="container max-w-6xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+            {/* Brand */}
+            <div className="col-span-2 md:col-span-1">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center"
+                  style={{
+                    background: "oklch(0.73 0.12 210 / 0.15)",
+                    border: "1px solid oklch(0.73 0.12 210 / 0.3)",
+                  }}
                 >
-                  {e}
-                </span>
+                  <Bot
+                    className="w-5 h-5"
+                    style={{ color: "oklch(0.73 0.12 210)" }}
+                  />
+                </div>
+                <div className="leading-none">
+                  <div className="font-display text-white font-bold text-sm tracking-widest uppercase">
+                    White Bot
+                  </div>
+                  <div
+                    className="text-xs tracking-widest uppercase"
+                    style={{ color: "oklch(0.73 0.12 210)" }}
+                  >
+                    AI Agency
+                  </div>
+                </div>
+              </div>
+              <p
+                className="text-xs leading-relaxed"
+                style={{ color: "oklch(0.55 0.01 228)" }}
+              >
+                Building intelligent AI systems for forward-thinking businesses.
+              </p>
+            </div>
+
+            {/* Link columns */}
+            {Object.entries(FOOTER_LINKS).map(([category, links]) => (
+              <div key={category}>
+                <h4 className="font-display text-xs font-bold uppercase tracking-widest mb-4 text-white">
+                  {category}
+                </h4>
+                <ul className="flex flex-col gap-2.5">
+                  {links.map((link) => (
+                    <li key={link.label}>
+                      <a
+                        href={link.href}
+                        className="text-sm transition-colors duration-200 hover:text-white"
+                        style={{ color: "oklch(0.55 0.01 228)" }}
+                        data-ocid="footer.link"
+                      >
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <div
+            className="h-px mb-8"
+            style={{ background: "oklch(0.25 0.03 228)" }}
+          />
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p
+              className="text-sm flex items-center gap-1.5"
+              style={{ color: "oklch(0.45 0.01 228)" }}
+            >
+              © {new Date().getFullYear()} White Bot AI Agency. Built with{" "}
+              <Heart
+                className="w-3.5 h-3.5 fill-current inline"
+                style={{ color: "oklch(0.73 0.12 210)" }}
+              />{" "}
+              using{" "}
+              <a
+                href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors"
+                style={{ color: "oklch(0.73 0.12 210)" }}
+                data-ocid="footer.link"
+              >
+                caffeine.ai
+              </a>
+            </p>
+
+            <div className="flex items-center gap-3">
+              {[
+                {
+                  icon: Twitter,
+                  label: "Twitter",
+                  href: "https://twitter.com",
+                },
+                {
+                  icon: Linkedin,
+                  label: "LinkedIn",
+                  href: "https://linkedin.com",
+                },
+                { icon: Github, label: "GitHub", href: "https://github.com" },
+              ].map(({ icon: Icon, label, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+                  style={{
+                    background: "oklch(0.25 0.03 228)",
+                    color: "oklch(0.55 0.01 228)",
+                  }}
+                  data-ocid="footer.link"
+                >
+                  <Icon className="w-4 h-4" />
+                </a>
               ))}
             </div>
           </div>
-          <p className="font-display text-2xl md:text-3xl font-bold text-foreground mb-3">
-            Make it special. Make it memorable.
-          </p>
-          <p className="text-3xl mb-6">Happy Celebrating! 🎊</p>
-          <p className="text-muted-foreground text-sm flex items-center justify-center gap-1.5">
-            © {new Date().getFullYear()}. Built with{" "}
-            <Heart className="w-4 h-4 text-primary fill-primary inline" /> using{" "}
-            <a
-              href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline font-semibold"
-              data-ocid="footer.link"
-            >
-              caffeine.ai
-            </a>
-          </p>
         </div>
       </footer>
     </div>

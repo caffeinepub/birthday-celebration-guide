@@ -7,5 +7,12 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export interface ContactData {
+    name: string;
+    email: string;
+    message: string;
+}
 export interface backendInterface {
+    getSubmissions(): Promise<Array<ContactData>>;
+    submit(name: string, email: string, message: string): Promise<void>;
 }

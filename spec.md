@@ -1,18 +1,19 @@
-# Birthday Celebration Guide
+# White Bot AI Agency
 
 ## Current State
-New project, no existing code.
+New project -- no existing application files.
 
 ## Requested Changes (Diff)
 
 ### Add
-- A birthday celebration guide website for a friend
-- Hero section with a warm birthday-themed header
-- Party planning tips section (steps/checklist)
-- Decoration ideas section
-- Cake and food ideas section
-- Fun activities and games section
-- Gift ideas section
+- Full agency landing page for "White Bot AI Agency"
+- Header with logo, navigation, and CTA button
+- Hero section with headline, subtext, and two CTA buttons
+- Services section with 3 service cards
+- About Us section with split layout
+- Portfolio/clients logo strip
+- Contact section with form (Name, Email, Message)
+- Footer with links and copyright
 
 ### Modify
 - N/A
@@ -21,7 +22,6 @@ New project, no existing code.
 - N/A
 
 ## Implementation Plan
-1. Generate Motoko backend (minimal, static content app)
-2. Build frontend with multiple sections: hero, planning tips, decorations, cake/food, activities, gifts
-3. Use card layouts and icons for each section
-4. Make it visually festive and fun
+1. Generate Motoko backend with contact form message storage
+2. Build React frontend matching the design preview
+3. Wire contact form to backend
